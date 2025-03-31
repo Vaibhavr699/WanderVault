@@ -62,9 +62,9 @@ const SignUp = () => {
 
   const handleGoogleSuccess = async (credentialResponse) => {
     try {
-      const token = credentialResponse.credential; // Google credential
+      const token = credentialResponse.credential;
       const response = await axiosInstance.post("/google-signup", { token });
-      
+
       if (response.data && response.data.accessToken) {
         localStorage.setItem("token", response.data.accessToken);
         toast.success("Signed up with Google successfully!");
@@ -81,28 +81,35 @@ const SignUp = () => {
   };
 
   return (
-    <div className="h-screen bg-cyan-50 overflow-hidden relative">
-      <div className="login-ui-box right-10 -top-40" />
-      <div className="login-ui-box bg-cyan-200 -bottom-40 right-1/2" />
-      <div className="container h-screen flex items-center justify-center px-20 mx-auto">
-        <div className="w-2/4 h-[98vh] flex items-end bg-signup-bg-img bg-cover bg-center rounded-lg p-10 z-50">
-          <div className="absolute top-8 left-24 p-4 rounded-lg max-w-sm">
-            <h4 className="text-5xl text-black font-semibold leading-[58px]">
+    <div className="h-screen bg-[#E3F2FD] text-gray-900 overflow-hidden relative">
+      <div className="login-ui-box right-10 -top-40 bg-[#BBDEFB]" />
+      <div className="login-ui-box bg-[#90CAF9] -bottom-40 right-1/2" />
+
+      <div className="container h-screen flex flex-col md:flex-row items-center justify-center px-6 md:px-20 mx-auto">
+        {/* Left Side Image Section 
+        <div className="w-full md:w-2/4 h-[60vh] md:h-[98vh] flex items-end bg-signup-bg-img bg-cover bg-center rounded-lg p-6 md:p-10 z-50">
+          <div className="absolute top-8 left-6 md:left-24 p-4 rounded-lg max-w-sm bg-white bg-opacity-50 backdrop-blur-md shadow-lg">
+            <h4 className="text-3xl md:text-5xl text-[#3949AB] font-semibold leading-tight">
               Join the <br /> Adventure!
             </h4>
-            <p className="text-[15px] text-black leading-6 pr-7 mt-4">
-              Create an account to start documenting your travels and preserving your memories.
+            <p className="text-sm md:text-[15px] text-gray-700 leading-6 pr-7 mt-4">
+              Create an account to start documenting your travels and preserving
+              your memories.
             </p>
           </div>
         </div>
-        <div className="w-2/4 h-[75vh] bg-white rounded-r-lg relative p-16 shadow-lg">
+        */}
+        
+
+        {/* Right Side SignUp Form */}
+        <div className="w-full md:w-2/4 h-auto md:h-[75vh] bg-[#F5F5F5] text-gray-900 rounded-lg md:rounded-r-lg relative p-8 md:p-16 shadow-lg">
           <form onSubmit={handleSignUp}>
-            <h4 className="text-2xl font-semibold mb-7">SignUp</h4>
+            <h4 className="text-2xl font-semibold mb-7">Sign Up</h4>
 
             <input
               type="text"
               placeholder="Full Name"
-              className="input-box"
+              className="input-box w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#3949AB]"
               value={name}
               onChange={({ target }) => setName(target.value)}
             />
@@ -110,7 +117,7 @@ const SignUp = () => {
             <input
               type="text"
               placeholder="Email"
-              className="input-box"
+              className="input-box w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#3949AB]"
               value={email}
               onChange={({ target }) => setEmail(target.value)}
             />
@@ -122,24 +129,29 @@ const SignUp = () => {
 
             {error && <p className="text-red-500 text-xs pb-1">{error}</p>}
 
-            <button type="submit" className="btn-primary">
+            <button
+              type="submit"
+              className="w-full bg-[#3949AB] text-white py-3 rounded-md mt-4 hover:bg-[#303F9F] transition duration-300"
+            >
               Create Account
             </button>
-            <p className="text-xs text-slate-500 text-center my-4"> Or</p>
+            <p className="text-xs text-gray-500 text-center my-4"> Or</p>
 
-            <GoogleLogin
-              onSuccess={handleGoogleSuccess}
-              onError={handleGoogleError}
-              text="signup_with"
-              useOneTap
-            />
+            <div className="flex justify-center my-4">
+              <GoogleLogin
+                onSuccess={handleGoogleSuccess}
+                onError={handleGoogleError}
+                text="signup_with"
+                useOneTap
+              />
+            </div>
 
             <button
               type="button"
-              className="btn-primary btn-light"
+              className="w-full bg-gray-300 text-gray-900 py-2 rounded-md hover:bg-[#4CAF50] hover:text-white transition duration-300"
               onClick={() => navigate("/login")}
             >
-              LogIn
+              Log In
             </button>
           </form>
         </div>

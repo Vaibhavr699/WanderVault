@@ -19,6 +19,7 @@ const { error } = require("console");
 
 mongoose.connect(config.connectionString);
 
+
 const app = express();
 app.use(express.json());
 app.use(cors({ origin: "*" }));
@@ -316,7 +317,7 @@ app.put("/update-is-favourite/:id", authenticateToken, async (req, res) => {
 });
 
 //Search travel story
-app.put("/search", authenticateToken, async (req, res) => {
+app.get("/search", authenticateToken, async (req, res) => {
   const { query } = req.query;
   const { userId } = req.user;
 
@@ -356,6 +357,50 @@ app.put("/filter", authenticateToken, async (req, res) => {
     res.status(500).json({ error: true, message: error.message });
   }
 });
+
+// filter stories by date range
+app.get("/travel-stories/filter", authenticateToken, async (req, res) => {
+  const { startDate, endDate } = req.query; // Expecting timestamps in milliseconds
+  const { userId } = req.user; // Extract userId from authenticated token
+
+  try {
+    // Validate input dates
+    if (!startDate || !endDate) {
+      return res.status(400).json({
+        error: true,
+        message: "Both startDate and endDate are required in the query parameters.",
+      });
+    }
+
+    // Convert timestamps to Date objects
+    const start = new Date(Number(startDate));
+    const end = new Date(Number(endDate));
+
+    // Validate that dates are valid
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+      return res.status(400).json({
+        error: true,
+        message: "Invalid date format. Provide timestamps in milliseconds.",
+      });
+    }
+
+    // Fetch filtered travel stories for the authenticated user
+    const filteredStories = await TravelStory.find({
+      userId, // Match the user ID
+      visitedDate: { $gte: start, $lte: end }, // Filter by date range
+    }).sort({ isFavourite: -1 }); // Sort by 'isFavourite' in descending order
+
+    // Respond with the filtered stories
+    res.status(200).json({ stories: filteredStories });
+  } catch (error) {
+    console.error("Error fetching travel stories:", error);
+    res.status(500).json({
+      error: true,
+      message: "An internal server error occurred. Please try again later.",
+    });
+  }
+});
+
 
 // Serve static files from the "uploads" directory
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));

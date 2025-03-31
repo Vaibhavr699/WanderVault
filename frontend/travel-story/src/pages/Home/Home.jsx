@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import Navbar from "../../components/Navbar";
 import { useNavigate } from "react-router-dom";
-import { MdAdd } from "react-icons/md";
+import { MdAdd, MdDateRange } from "react-icons/md";
 import axiosInstance from "../../utils/axiosInstance";
 import TravelStoryCard from "../../components/Cards/TravelStoryCard";
 import { ToastContainer, toast } from "react-toastify";
@@ -11,6 +11,10 @@ import AddEditTravelStory from "./AddEditTravelStory";
 import ViewTravelStory from "./ViewTravelStory";
 import EmptyCard from "../../components/Cards/EmptyCard";
 import EmptyImg from "../../assets/images/add-story.svg";
+import { DayPicker } from "react-day-picker";
+import moment from "moment";
+import FilterInfoTitle from "../../components/Cards/FilterInfoTitle";
+import { getEmptyCardImg, getEmptyCardMessage } from "../../utils/helper";
 
 const Home = () => {
   const navigate = useNavigate();
@@ -19,6 +23,7 @@ const Home = () => {
 
   const [searchQuery, setSearchQuery] = useState("");
   const [filterType, setFilterType] = useState("");
+  const [dateRange, setDateRange] = useState({from:null, to:null});
 
   const [openAddEditModal, setAddEditModal] = useState({
     isShown: false,
@@ -87,7 +92,16 @@ const Home = () => {
 
       if (response.data?.story) {
         toast.success("Story Updated Successfully!");
-        getAllTravelStories(); // Refresh the story list
+
+        if(filterType === "search" && searchQuery){
+          onSearchStory(searchQuery);
+        }
+        else if(filterType==="date"){
+          filterStoriesByDate(dateRange);
+        }else{
+          getAllTravelStories();
+        }
+         // Refresh the story list
       } else {
         console.error("Failed to update the story's favorite status!");
         toast.error("Failed to update the story. Please try again.");
@@ -142,7 +156,52 @@ const Home = () => {
     getAllTravelStories();
   };
 
-
+  //handle filter story by date range
+  const filterStoriesByDate = async (day) => {
+    try {
+      // Parse startDate and endDate from the provided day range
+      const startDate = day.from ? moment(day.from).valueOf() : null;
+      const endDate = day.to ? moment(day.to).valueOf() : null;
+  
+      // Validate startDate and endDate
+      if (!startDate || !endDate) {
+        console.error("Invalid date range. Both 'from' and 'to' dates are required.");
+        return;
+      }
+  
+      // Make API call to filter travel stories
+      const response = await axiosInstance.get("/travel-stories/filter", {
+        params: { startDate, endDate },
+      });
+  
+      // Validate API response and update state
+      if (response.data && Array.isArray(response.data.stories)) {
+        setFilterType("date"); // Update filter type
+        setAllStories(response.data.stories); // Update stories with filtered data
+      } else {
+        console.warn("Unexpected API response format:", response.data);
+      }
+    } catch (error) {
+      // Log detailed error for debugging
+      if (error.response) {
+        console.error("API Error:", error.response.data.message);
+      } else {
+        console.error("An unexpected error occurred:", error.message);
+      }
+    }
+  };
+  
+  //handle date range select
+  const handleDayClick = (day) => {
+    setDateRange(day);
+    filterStoriesByDate(day);
+  };
+  //resest after not selecting any date
+  const resetFilter = () =>{
+    setDateRange({ from: null, to: null });
+    setFilterType("");
+    getAllTravelStories();
+  };
 
   useEffect(() => {
     getAllTravelStories();
@@ -162,10 +221,17 @@ const Home = () => {
       />
 
       <div className="container mx-auto px-5 py-5 pt-10 ">
-        <div className="flex gap-7">
+
+        <FilterInfoTitle
+          filterType={filterType}
+          filterDates={dateRange}
+          onClear={() => resetFilter()}
+        />  
+
+        <div className="flex flex-wrap gap-7">
           <div className="flex-1">
             {allStories.length > 0 ? (
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                 {allStories.map((item) => (
                   <TravelStoryCard
                     key={item._id}
@@ -183,12 +249,24 @@ const Home = () => {
               </div>
             ) : (
               <EmptyCard
-                imgSrc={EmptyImg}
-                message={`Start Creating Your First Travel Story`}
+                imgSrc={getEmptyCardImg(filterType)}
+                message={getEmptyCardMessage(filterType)}
               />
             )}
           </div>
-          <div className="w-[320px]"></div>
+          <div className="w-full md:w-[340px] hidden md:block">
+            <div className="bg-white border border-slate-200 shadow-lg shadow-slate-200/60 rounded-lg">
+              <div className="p-2">
+                <DayPicker 
+                  captionLayout="dropdown-buttons"
+                  mode="range"
+                  selected={dateRange}
+                  onSelect={handleDayClick}
+                  pagedNavigation
+                />
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -207,9 +285,7 @@ const Home = () => {
         <AddEditTravelStory
           type={openAddEditModal.type}
           storyInfo={openAddEditModal.data}
-          onClose={() => {
-            setAddEditModal({ isShown: false, type: "add", data: null });
-          }}
+          onClose={() => setAddEditModal({ isShown: false, type: "add", data: null })}
           getAllTravelStories={getAllTravelStories}
         />
       </ReactModal>
@@ -228,26 +304,20 @@ const Home = () => {
       >
         <ViewTravelStory
           storyInfo={openViewModal.data || null}
-          onClose={() => {
-            setOpenViewModal((prevState) => ({ ...prevState, isShown: false }));
-          }}
+          onClose={() => setOpenViewModal((prevState) => ({ ...prevState, isShown: false }))}
           onEditClick={() => {
             setOpenViewModal((prevState) => ({ ...prevState, isShown: false }));
             handleEdit(openViewModal.data || null);
           }}
-          onDeleteClick={() => {
-            deleteTravelStory(openViewModal.data || null);
-          }}
+          onDeleteClick={() => deleteTravelStory(openViewModal.data || null)}
         />
       </ReactModal>
 
       <button
-        className="w-16 h-16 flex items-center justify-center rounded-full bg-primary hover:bg-cyan-400 fixed right-10 bottom-10"
-        onClick={() => {
-          setAddEditModal({ isShown: true, type: "add", data: null });
-        }}
+        className="w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-center rounded-full bg-primary hover:bg-cyan-400 fixed right-5 bottom-5 sm:right-10 sm:bottom-10"
+        onClick={() => setAddEditModal({ isShown: true, type: "add", data: null })}
       >
-        <MdAdd className="text-[32px] text-white" />
+        <MdAdd className="text-[28px] sm:text-[32px] text-white" />
       </button>
       <ToastContainer />
     </>
