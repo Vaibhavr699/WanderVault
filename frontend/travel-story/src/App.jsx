@@ -15,11 +15,10 @@ const App = () => {
     <div>
       <Router>
         <Routes>
-          <Route path="/" exact element={<Root/>} />
-          <Route path="/Home" exact element={<StartupHome />} />
+          <Route path="/" exact element={<StartupHome />} />
           <Route path="/dashboard" exact element={<Home />} />
-          <Route path="/login" exact element={<Login />} />
-          <Route path="/signup" exact element={<SignUp />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<SignUp />} />
         </Routes>
       </Router>
     </div>

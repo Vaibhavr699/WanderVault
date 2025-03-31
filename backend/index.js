@@ -401,6 +401,48 @@ app.get("/travel-stories/filter", authenticateToken, async (req, res) => {
   }
 });
 
+// Google Signup/Login
+app.post("/google-signup", async (req, res) => {
+  const { email, fullName, uid } = req.body;
+
+  if (!email || !fullName || !uid) {
+    return res.status(400).json({ error: true, message: "All fields are required" });
+  }
+
+  try {
+    // Check if user already exists
+    let user = await User.findOne({ email });
+
+    if (!user) {
+      // Create a new user if not found
+      user = new User({
+        fullName,
+        email,
+        password: "", // No password for Google signup
+        uid,
+      });
+      await user.save();
+    }
+
+    // Generate JWT token
+    const accessToken = jwt.sign(
+      { userId: user._id },
+      process.env.ACCESS_TOKEN_SECRET,
+      { expiresIn: "72h" }
+    );
+
+    return res.status(200).json({
+      error: false,
+      message: "Google Signup/Login Successful",
+      user: { fullName: user.fullName, email: user.email },
+      accessToken,
+    });
+  } catch (error) {
+    console.error("Error in Google Signup:", error);
+    return res.status(500).json({ error: true, message: "Internal Server Error" });
+  }
+});
+
 
 // Serve static files from the "uploads" directory
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));

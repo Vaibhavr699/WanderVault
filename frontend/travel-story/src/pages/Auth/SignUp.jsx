@@ -5,7 +5,8 @@ import { validateEmail } from "../../utils/helper";
 import axiosInstance from "../../utils/axiosInstance";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { GoogleLogin } from "@react-oauth/google";
+import { GoogleAuthProvider, signInWithPopup, getAuth } from "firebase/auth";
+import "../Auth/Firebase.jsx";
 
 const SignUp = () => {
   const [name, setName] = useState("");
@@ -14,23 +15,27 @@ const SignUp = () => {
   const [error, setError] = useState(null);
 
   const navigate = useNavigate();
+  const auth = getAuth();
 
   const handleSignUp = async (e) => {
     e.preventDefault();
 
     if (!name) {
       setError("Please enter your Name!");
+      toast.error("Please enter your Name!");
       return;
     }
 
     if (!validateEmail(email)) {
       setError("Please enter a valid email address!");
+      toast.error("Please enter a valid email address!");
       return;
     }
     setError(null);
 
     if (!password) {
       setError("Please enter the password!");
+      toast.error("Please enter the password!");
       return;
     }
     setError("");
@@ -48,22 +53,23 @@ const SignUp = () => {
         navigate("/login");
       }
     } catch (error) {
-      if (
-        error.response &&
-        error.response.data &&
-        error.response.data.message
-      ) {
-        setError(error.response.data.message);
-      } else {
-        setError("An unexpected error occurred. Please try again.");
-      }
+      const errorMessage = error.response?.data?.message || "An unexpected error occurred. Please try again.";
+      setError(errorMessage);
+      toast.error(errorMessage);
     }
   };
 
-  const handleGoogleSuccess = async (credentialResponse) => {
+  const handleGoogleSignup = async () => {
+    const provider = new GoogleAuthProvider();
     try {
-      const token = credentialResponse.credential;
-      const response = await axiosInstance.post("/google-signup", { token });
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
+
+      const response = await axiosInstance.post("/google-signup", {
+        email: user.email,
+        fullName: user.displayName,
+        uid: user.uid,
+      });
 
       if (response.data && response.data.accessToken) {
         localStorage.setItem("token", response.data.accessToken);
@@ -71,13 +77,8 @@ const SignUp = () => {
         navigate("/dashboard");
       }
     } catch (error) {
-      console.error(error);
-      setError("Google sign-up failed. Please try again.");
+      toast.error("Google Sign-Up Failed. Please try again.");
     }
-  };
-
-  const handleGoogleError = () => {
-    toast.error("Google Sign-Up Failed. Please try again.");
   };
 
   return (
@@ -86,22 +87,6 @@ const SignUp = () => {
       <div className="login-ui-box bg-[#90CAF9] -bottom-40 right-1/2" />
 
       <div className="container h-screen flex flex-col md:flex-row items-center justify-center px-6 md:px-20 mx-auto">
-        {/* Left Side Image Section 
-        <div className="w-full md:w-2/4 h-[60vh] md:h-[98vh] flex items-end bg-signup-bg-img bg-cover bg-center rounded-lg p-6 md:p-10 z-50">
-          <div className="absolute top-8 left-6 md:left-24 p-4 rounded-lg max-w-sm bg-white bg-opacity-50 backdrop-blur-md shadow-lg">
-            <h4 className="text-3xl md:text-5xl text-[#3949AB] font-semibold leading-tight">
-              Join the <br /> Adventure!
-            </h4>
-            <p className="text-sm md:text-[15px] text-gray-700 leading-6 pr-7 mt-4">
-              Create an account to start documenting your travels and preserving
-              your memories.
-            </p>
-          </div>
-        </div>
-        */}
-        
-
-        {/* Right Side SignUp Form */}
         <div className="w-full md:w-2/4 h-auto md:h-[75vh] bg-[#F5F5F5] text-gray-900 rounded-lg md:rounded-r-lg relative p-8 md:p-16 shadow-lg">
           <form onSubmit={handleSignUp}>
             <h4 className="text-2xl font-semibold mb-7">Sign Up</h4>
@@ -135,15 +120,18 @@ const SignUp = () => {
             >
               Create Account
             </button>
+
             <p className="text-xs text-gray-500 text-center my-4"> Or</p>
 
             <div className="flex justify-center my-4">
-              <GoogleLogin
-                onSuccess={handleGoogleSuccess}
-                onError={handleGoogleError}
-                text="signup_with"
-                useOneTap
-              />
+              <button
+                type="button"
+                className="w-full bg-gray-300 text-gray-900 py-2 rounded-md hover:bg-[#4CAF50] hover:text-white transition duration-300"
+                onClick={handleGoogleSignup}
+              >
+                Sign Up with Google
+                
+              </button>
             </div>
 
             <button
