@@ -24,6 +24,7 @@ const app = express();
 app.use(express.json());
 app.use(cors({ origin: "*" }));
 
+
 //create account
 app.post("/create-account", async (req, res) => {
   const { fullName, email, password } = req.body;
@@ -445,6 +446,7 @@ app.post("/google-signup", async (req, res) => {
 
 
 // Serve static files from the "uploads" directory
+
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 app.use("/assets", express.static(path.join(__dirname, "assets")));
 
